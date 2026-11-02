@@ -290,6 +290,13 @@ public:
      */
     bool previous_page_ended_with_continued_packet() const;
 
+    // Parse Ogg page header from raw bytes
+    static OggDemuxResult parse_page_header(const uint8_t* data, size_t data_len,
+                                            OggPageHeader& header, size_t& header_size);
+    
+    // Sum segment table lacing values to get total page body size
+    static size_t calculate_body_size(const uint8_t* segment_table, uint8_t segment_count);
+
 #ifdef MICRO_OGG_DEMUXER_DEBUG
     /**
      * @brief Get debug state information
@@ -355,13 +362,6 @@ private:
         PACKET,  // get_next_packet()
         DATA     // get_next_data()
     };
-
-    // Parse Ogg page header from raw bytes
-    static OggDemuxResult parse_page_header(const uint8_t* data, size_t data_len,
-                                            OggPageHeader& header, size_t& header_size);
-
-    // Sum segment table lacing values to get total page body size
-    static size_t calculate_body_size(const uint8_t* segment_table, uint8_t segment_count);
 
     // Grow internal buffer to accommodate needed_size bytes
     GrowBufferResult grow_buffer(size_t needed_size);

@@ -453,7 +453,7 @@ bool OggDemuxer::previous_page_ended_with_continued_packet() const {
 }
 
 // ==============================================================================
-// PRIVATE HELPERS: Page Header Parsing
+// PUBLIC HELPERS: Page Header Parsing
 // ==============================================================================
 
 OggDemuxResult OggDemuxer::parse_page_header(const uint8_t* data, size_t data_len,
@@ -491,6 +491,18 @@ OggDemuxResult OggDemuxer::parse_page_header(const uint8_t* data, size_t data_le
 
     return OGG_OK;
 }
+
+size_t OggDemuxer::calculate_body_size(const uint8_t* segment_table, uint8_t segment_count) {
+    size_t total = 0;
+    for (uint8_t i = 0; i < segment_count; i++) {
+        total += segment_table[i];
+    }
+    return total;
+}
+
+// ==============================================================================
+// PRIVATE HELPERS: Page Header Parsing
+// ==============================================================================
 
 OggDemuxResult OggDemuxer::validate_page_crc() const {
     if (incremental_crc_ != current_page_.checksum) {
@@ -1001,14 +1013,6 @@ void OggDemuxer::handle_zero_copy_path(const uint8_t* input, size_t input_len,
 // ==============================================================================
 // PRIVATE HELPERS: Segment and Packet Navigation
 // ==============================================================================
-
-size_t OggDemuxer::calculate_body_size(const uint8_t* segment_table, uint8_t segment_count) {
-    size_t total = 0;
-    for (uint8_t i = 0; i < segment_count; i++) {
-        total += segment_table[i];
-    }
-    return total;
-}
 
 void OggDemuxer::begin_packet_span() {
     current_span_ = scan_for_next_packet(current_segment_index_);

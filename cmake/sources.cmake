@@ -243,6 +243,7 @@ endfunction()
 set(OGG_OPUS_SOURCES
     src/opus_header.cpp
     src/ogg_opus_decoder.cpp
+    src/ogg_seek.cpp
     src/opus_packet_decoder.cpp
 )
 
