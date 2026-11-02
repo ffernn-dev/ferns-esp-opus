@@ -1,4 +1,5 @@
 // Copyright 2025 Kevin Ahrendt
+// Modifications Copyright 2026 ffernn-dev
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +12,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Modified from esphome-libs/micro-ogg-demuxer: added a resync() function
+// to reset demuxer state but keep stream active.
 
 /// @file ogg_demuxer.h
 /// @brief Lightweight, platform-agnostic Ogg container demuxer implementing RFC 3533 page demuxing
@@ -248,9 +252,22 @@ public:
     OggDemuxState get_next_packet(const uint8_t* input, size_t input_len);
 
     /**
-     * @brief Reset demuxer state
+     * @brief Prepare to continue demuxing from a new page boundary mid-stream
+     *
+     * Like reset(), this discards all in-progress parsing state but
+     * keeps the the serial number, the "stream initialized" flag and the BOS-already-seen flag.
+     * The next page is therefore not required to be a BOS, must still carry the same serial number, 
+     * and has its page sequence number accepted as the new expected value.
+     *
+     * @note Only meaningful after at least one page has been demuxed (so the serial number is
+     *       known). Before that, use reset() or simply feed the stream from the start.
      */
     void reset();
+
+    /**
+     * @brief #TODO
+     */
+    void resync();
 
     /**
      * @brief Get the current page's continued packet flag state
@@ -475,6 +492,7 @@ private:
     bool span_active_{false};      // True while the current span is partially consumed
     State state_{STATE_EXPECT_PAGE_HEADER};
     bool stream_initialized_{false};
+    bool resync_pending_{false};
 
 #ifdef MICRO_OGG_DEMUXER_DEBUG
     // Statistics (only enabled with MICRO_OGG_DEMUXER_DEBUG). The packet

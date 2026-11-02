@@ -1,4 +1,5 @@
 // Copyright 2025 Kevin Ahrendt
+// Modifications Copyright 2026 ffernn-dev
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +12,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Modified from esphome-libs/micro-opus: added a prepare_seek() method
+// to reset decoder state and resync ogg demuxer
 
 /* Ogg Opus Streaming Decoder Wrapper for ESP-IDF
  * Implementation of OggOpusDecoder class
@@ -743,6 +747,31 @@ OggOpusResult OggOpusDecoder::decode(const uint8_t* input, size_t input_len, uin
 
     // Demuxer encountered error
     return handle_demuxer_error(parse_state.result);
+}
+
+OggOpusResult OggOpusDecoder::prepare_seek(int64_t start_granule) {
+    if (state_ != STATE_DECODING) {
+        return OGG_OPUS_NOT_INITIALIZED;
+    }
+
+    // resets don't change decode_gain thankfully 
+    if (packet_decoder_) {
+        packet_decoder_->reset();
+    } else if (opus_ms_decoder_) {
+        opus_multistream_decoder_ctl(opus_ms_decoder_, OPUS_RESET_STATE);
+    }
+    if (ogg_demuxer_ != nullptr) {
+        ogg_demuxer_->resync();
+    }
+
+    last_granule_position_ = start_granule;
+    prev_page_granule_position_ = start_granule;
+    samples_on_current_page_ = 0;
+    packets_on_current_page_ = 0;
+    first_audio_page_samples_ = -1;
+    pre_skip_applied_ = true;
+    eos_seen_ = false;
+    return OGG_OPUS_OK;
 }
 
 #ifdef MICRO_OGG_DEMUXER_DEBUG

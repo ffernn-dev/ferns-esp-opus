@@ -1,4 +1,5 @@
 // Copyright 2025 Kevin Ahrendt
+// Modifications Copyright 2026 ffernn-dev
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +12,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Modified from esphome-libs/micro-opus: added a prepare_seek() method
+// to reset decoder state and resync ogg demuxer
 
 /* Ogg Opus Streaming Decoder Wrapper for ESP-IDF
  * A C++ wrapper around libopus that handles Ogg container parsing
@@ -239,6 +243,23 @@ public:
     MICRO_OPUS_NODISCARD OggOpusResult decode(const uint8_t* input, size_t input_len,
                                               uint8_t* output, size_t output_size,
                                               size_t& bytes_consumed, size_t& samples_decoded);
+
+    /**
+     * @brief Prepare the decoder to continue from a different position in the stream (seeking)
+     *
+     * Resets the Opus decoder state, resyncs the Ogg demuxer, and sets the granule position
+     * tracking so validation and end trimming work from the new playhead position.
+     *
+     *
+     * @param start_granule Granule position of the page immediately before the one
+     *                      that decoding will resume from.
+     *
+     * @return OGG_OPUS_OK or OGG_OPUS_NOT_INITIALIZED.
+     *
+     * @note To restart completely, use reset() and feed the file from byte 0 instead
+     * @note Also clears the EoS latch, so seeking works even after the end of the track has been reached
+     */
+    OggOpusResult prepare_seek(int64_t start_granule);
 
     /**
      * @brief Get the sample rate of the decoded audio

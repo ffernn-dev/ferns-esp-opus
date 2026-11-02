@@ -1,4 +1,5 @@
 // Copyright 2025 Kevin Ahrendt
+// Modifications Copyright 2026 ffernn-dev
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +12,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Modified from esphome-libs/micro-ogg-demuxer: added a resync() function
+// to reset demuxer state but keep stream active.
 
 /* microOggDemuxer - Lightweight Ogg Container Demuxer
  * Implements RFC 3533 Ogg page demuxing with zero-copy optimization.
@@ -412,10 +416,32 @@ void OggDemuxer::reset() {
     bos_flag_used_ = false;
     incremental_crc_ = 0;
     active_mode_ = ConsumptionMode::UNSET;
+    resync_pending_ = false;
 #ifdef MICRO_OGG_DEMUXER_DEBUG
     zero_copy_packets_ = 0;
     buffered_packets_ = 0;
 #endif
+}
+
+void OggDemuxer::resync() {
+    state_ = STATE_EXPECT_PAGE_HEADER;
+    page_header_staging_size_ = 0;
+    current_segment_index_ = 0;
+    page_body_bytes_consumed_ = 0;
+    page_body_size_ = 0;
+    packet_assembly_size_ = 0;
+    assembling_packet_ = false;
+    skipping_packet_ = false;
+    current_span_ = PacketInfo{};
+    span_remaining_ = 0;
+    span_active_ = false;
+    previous_page_ended_with_continued_packet_ = false;
+    granule_position_ = 0;
+    expected_page_sequence_ = 0;
+    current_packet_is_bos_ = false;
+    incremental_crc_ = 0;
+    active_mode_ = ConsumptionMode::UNSET;
+    resync_pending_ = true;
 }
 
 bool OggDemuxer::current_page_has_continued_flag() const {
@@ -724,6 +750,10 @@ bool OggDemuxer::validate_stream_consistency(OggDemuxState& state) {
         if (current_page_.stream_serial != stream_serial_) {
             state.result = OGG_STREAM_SERIAL_MISMATCH;
             return false;
+        }
+        if (resync_pending_) {
+            expected_page_sequence_ = current_page_.page_sequence;
+            resync_pending_ = false;
         }
         if (current_page_.page_sequence != expected_page_sequence_) {
             state.result = OGG_STREAM_SEQUENCE_ERROR;

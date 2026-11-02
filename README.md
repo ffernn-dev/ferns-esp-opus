@@ -1,13 +1,17 @@
-# microOpus - Embedded Opus Wrapper
+# Fern's ESP Opus
 
 [![CI](https://github.com/esphome-libs/micro-opus/actions/workflows/ci.yml/badge.svg)](https://github.com/esphome-libs/micro-opus/actions/workflows/ci.yml)
 [![Component Registry](https://components.espressif.com/components/esphome/micro-opus/badge.svg)](https://components.espressif.com/components/esphome/micro-opus)
 
-An embedded-focused wrapper for the Opus audio codec. Designed as an ESP-IDF component with PSRAM support and Xtensa DSP optimizations for ESP32/ESP32-S3.
+An embedded-focused wrapper for the Opus audio codec. Forked from `esphome-libs/micro-opus`. Designed as an ESP-IDF component with PSRAM support and Xtensa DSP optimizations for ESP32/ESP32-S3.
 
 [![A project from the Open Home Foundation](https://www.openhomefoundation.org/badges/ohf-project.png)](https://www.openhomefoundation.org/)
 
-## Features
+## Features of this Fork
+
+- **Ogg seeking support**: Jump to any point in the track and continue decoding
+
+## Upstream Features
 
 - **Ogg Opus container support**: C++ streaming decoder with zero-copy optimization
 - **Xtensa DSP optimizations**: ~17-25% faster decoding on ESP32/ESP32-S3 (see [DSP Instructions](#xtensa-dsp-instructions))
@@ -29,6 +33,12 @@ An embedded-focused wrapper for the Opus audio codec. Designed as an ESP-IDF com
 ```bash
 idf.py menuconfig
 # Navigate to: Component config → Opus Audio Codec
+```
+
+## Pulling in upstream updates
+
+```bash
+git subtree pull --prefix=lib/micro-ogg-demuxer https://github.com/esphome-libs/micro-ogg-demuxer.git main --squash
 ```
 
 ### Memory Allocation
